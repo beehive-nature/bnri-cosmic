@@ -1,4 +1,5 @@
 // Z-2: HexRect codec tests — round-trip property test + golden vectors + error cases
+// SPDX-License-Identifier: AGPL-3.0-only
 
 use bnri_cosmic::hex_renderer::{encode_hexrects, parse_hexrects, HexCodecError, HexRect};
 use serde::Deserialize;

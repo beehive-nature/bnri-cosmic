@@ -1,5 +1,6 @@
 // Z-7: Sidecar IPC tests — real infer() calls against fake sidecars.
 // Receipt rule: these tests must compile and pass.
+// SPDX-License-Identifier: AGPL-3.0-only
 
 use bnri_cosmic::agent::{LlmSidecar, SidecarError};
 use std::sync::Arc;

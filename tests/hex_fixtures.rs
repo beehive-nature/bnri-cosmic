@@ -1,5 +1,6 @@
 // Z-1: Hex fixture tests — validates hex math against shared JSON vectors
 // These same vectors must pass in the Solidity HexLib and JS HexLib.
+// SPDX-License-Identifier: AGPL-3.0-only
 
 use bnri_cosmic::hex_renderer::{hex_center, hex_vertices, point_in_hex};
 use serde::Deserialize;
