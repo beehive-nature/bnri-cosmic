@@ -71,8 +71,15 @@ pub type PendingMap = Arc<Mutex<HashMap<u64, oneshot::Sender<Result<String, Stri
 pub struct LlmSidecar {
     /// Writer behind Mutex so &self can lock and write without &mut self.
     /// Locked only around the write — never held across the oneshot await.
-    writer: Option<Mutex<ChildStdin>>,
-    child: Option<Child>,
+    ///
+    /// The `Option` is inside the Mutex, not outside, so `stop(&self)` can take
+    /// the writer and drop it (signalling EOF) without `&mut self`.
+    writer: Mutex<Option<ChildStdin>>,
+    /// G-2: `Mutex<Option<Child>>` so the child can be killed and reaped through
+    /// a shared reference. The app holds the sidecar in an `Arc` — that is the
+    /// point of `infer(&self)` being concurrent — and a `&mut self` stop could
+    /// never be called through one.
+    child: Mutex<Option<Child>>,
     next_id: AtomicU64,
     pending: PendingMap,
     model_name: String,
@@ -110,8 +117,8 @@ impl LlmSidecar {
         });
 
         Ok(LlmSidecar {
-            writer: Some(Mutex::new(stdin)),
-            child: Some(child),
+            writer: Mutex::new(Some(stdin)),
+            child: Mutex::new(Some(child)),
             next_id: AtomicU64::new(1),
             pending,
             model_name: label.to_string(),
@@ -149,35 +156,22 @@ impl LlmSidecar {
     /// future calls return NotRunning. If no response within timeout, returns
     /// Timeout.
     pub async fn infer(&self, prompt: &str) -> Result<String, SidecarError> {
-        let writer = self.writer.as_ref().ok_or(SidecarError::NotRunning)?;
-
         let id = self.next_id.fetch_add(1, Ordering::SeqCst);
         let (tx, rx) = oneshot::channel();
 
-        // Register pending request
+        // Register before writing, so a response arriving between the write and
+        // the await below still finds its sender.
         {
             let mut map = self.pending.lock().await;
             map.insert(id, tx);
         }
 
-        // Send request as newline-delimited JSON
-        let request = SidecarRequest {
-            id,
-            prompt: prompt.to_string(),
-        };
-        let json_line = serde_json::to_string(&request)
-            .map_err(|e| SidecarError::WriteFailed(e.to_string()))?;
-
-        // Lock ONLY around the write — never hold across the oneshot await
-        {
-            let mut w = writer.lock().await;
-            w.write_all(format!("{}\n", json_line).as_bytes())
-                .await
-                .map_err(|e| SidecarError::WriteFailed(e.to_string()))?;
-            w.flush()
-                .await
-                .map_err(|e| SidecarError::WriteFailed(e.to_string()))?;
-            // Lock dropped here — concurrent callers can proceed
+        // From here on, `id` is in the pending map. Every early return must
+        // remove it first — a `?` that skips the removal strands this request's
+        // oneshot::Sender in the map for the life of the process.
+        if let Err(e) = self.send_request(id, prompt).await {
+            self.pending.lock().await.remove(&id);
+            return Err(e);
         }
 
         // Wait for response with timeout
@@ -194,24 +188,60 @@ impl LlmSidecar {
         }
     }
 
-    pub fn is_running(&self) -> bool {
-        self.writer.is_some()
+    /// Serialize and write one request. Split out of `infer` so that every
+    /// failure path returns an error rather than a `?` that would bypass the
+    /// pending-map cleanup at the call site.
+    async fn send_request(&self, id: u64, prompt: &str) -> Result<(), SidecarError> {
+        let request = SidecarRequest {
+            id,
+            prompt: prompt.to_string(),
+        };
+        let json_line = serde_json::to_string(&request)
+            .map_err(|e| SidecarError::WriteFailed(e.to_string()))?;
+
+        // Lock ONLY around the write — never held across the oneshot await.
+        let mut guard = self.writer.lock().await;
+        let w = guard.as_mut().ok_or(SidecarError::NotRunning)?;
+        w.write_all(format!("{}\n", json_line).as_bytes())
+            .await
+            .map_err(|e| SidecarError::WriteFailed(e.to_string()))?;
+        w.flush()
+            .await
+            .map_err(|e| SidecarError::WriteFailed(e.to_string()))?;
+        Ok(())
+        // Lock dropped here — concurrent callers can proceed
+    }
+
+    /// Whether the sidecar still holds an open writer. Async because the writer
+    /// lives behind the same Mutex `stop(&self)` takes it from.
+    pub async fn is_running(&self) -> bool {
+        self.writer.lock().await.is_some()
     }
 
     pub fn model_name(&self) -> &str {
         &self.model_name
     }
 
-    /// Stop the sidecar — kills the child process.
-    pub async fn stop(&mut self) {
-        self.writer.take(); // Drop writer → signal EOF
+    /// Stop the sidecar — kills and reaps the child process.
+    ///
+    /// G-2: takes `&self` so it is callable through an `Arc`. The app holds the
+    /// sidecar in an `Arc` (that is what makes `infer(&self)` concurrent), so a
+    /// `&mut self` stop could never be reached — the production API could not
+    /// stop its own sidecar.
+    ///
+    /// Order matters: the writer is dropped first to signal EOF, then the child
+    /// is killed and reaped, and only then is the pending map cleared. Clearing
+    /// the map drops every `oneshot::Sender`, so each waiting `infer()` observes
+    /// a closed channel and resolves to `NotRunning` rather than hanging.
+    pub async fn stop(&self) {
+        self.writer.lock().await.take(); // Drop writer → signal EOF
 
-        if let Some(mut child) = self.child.take() {
+        if let Some(mut child) = self.child.lock().await.take() {
             let _ = child.kill().await;
-            let _ = child.wait().await;
+            let _ = child.wait().await; // reap — no zombie
         }
 
-        // Drop all pending senders → receivers get error → NotRunning
+        // Drop all pending senders → receivers get RecvError → NotRunning
         let mut map = self.pending.lock().await;
         map.clear();
     }
@@ -219,8 +249,11 @@ impl LlmSidecar {
 
 impl Drop for LlmSidecar {
     fn drop(&mut self) {
-        if let Some(mut child) = self.child.take() {
-            let _ = child.start_kill(); // Best-effort kill (fail-closed)
+        // Best-effort only. `get_mut()` needs no lock — `&mut self` in Drop
+        // proves no other holder exists — so this stays sync and cannot block.
+        // It does not reap; a caller that needs the child reaped calls `stop()`.
+        if let Some(child) = self.child.get_mut().as_mut() {
+            let _ = child.start_kill(); // fail-closed: try to kill on the way out
         }
     }
 }

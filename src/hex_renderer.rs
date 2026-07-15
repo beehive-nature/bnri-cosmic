@@ -62,7 +62,7 @@ pub fn encode_hexrects(rects: &[HexRect]) -> Vec<u8> {
 /// Returns an error on any malformed data — never clamps, never silently
 /// drops bytes. The blob length MUST be a multiple of 8.
 pub fn parse_hexrects(data: &[u8]) -> Result<Vec<HexRect>, HexCodecError> {
-    if data.len() % 8 != 0 {
+    if !data.len().is_multiple_of(8) {
         return Err(HexCodecError::NotMultipleOf8);
     }
 
@@ -306,7 +306,6 @@ mod tests {
         let rgba = img.to_rgba8();
 
         let (cx, cy) = hex_center(0, 0, 30.0);
-        let verts = hex_vertices(cx, cy, 30.0);
 
         for y in 0..rgba.height() {
             for x in 0..rgba.width() {
