@@ -124,6 +124,43 @@ async fn test_stop_through_arc_resolves_pending_to_not_running() {
     }
 }
 
+/// `is_running()` must tell the truth after `stop()`.
+///
+/// Built around the liveness-before-death rule: the probe runs BEFORE the
+/// assertion under test. If the host has no working interpreter the child is
+/// already dead, the reader has already cleared the flag, and this fails at the
+/// probe — loudly, naming the reason — instead of the post-stop assertion
+/// passing because a corpse and a stopped sidecar report identically.
+///
+/// The defect this pins: reading `writer.is_some()` reports our handle, not the
+/// child. Only `stop()` takes the writer, so a child that dies on its own leaves
+/// `is_running()` answering `true` about a dead process.
+#[tokio::test]
+async fn test_is_running_truthful_after_stop() {
+    let sidecar = LlmSidecar::start_with_command(
+        "python3",
+        &["-c", SILENT_SIDECAR],
+        Duration::from_secs(120),
+        "liveness-test",
+    )
+    .await
+    .expect("failed to start silent sidecar");
+
+    tokio::time::sleep(Duration::from_millis(200)).await;
+    assert!(
+        sidecar.is_running(),
+        "sidecar must be alive before stop() — if this fails, the host has no \
+         working interpreter and every later assertion here would pass vacuously"
+    );
+
+    sidecar.stop().await;
+
+    assert!(
+        !sidecar.is_running(),
+        "is_running() must report false after stop()"
+    );
+}
+
 /// A silent sidecar must produce `Timeout` at the configured duration.
 #[tokio::test]
 async fn test_timeout_fires() {

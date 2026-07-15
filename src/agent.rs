@@ -10,7 +10,7 @@
 
 use crate::quote::TransactionQuote;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -82,6 +82,17 @@ pub struct LlmSidecar {
     child: Mutex<Option<Child>>,
     next_id: AtomicU64,
     pending: PendingMap,
+    /// Truthful liveness. Cleared by `stop()` AND by `reader_task` when the
+    /// child's stdout hits EOF or errors — i.e. when the sidecar dies on its
+    /// own, which nothing else observes.
+    ///
+    /// This exists because the obvious implementation lies. Reading
+    /// `writer.is_some()` reports liveness of *our handle*, not of the child:
+    /// only `stop()` ever takes the writer, so a child that crashes or is killed
+    /// externally leaves the writer `Some` and `is_running()` answering `true`
+    /// about a dead process. An `AtomicBool` is also readable without `.await`,
+    /// which keeps `is_running()` synchronous and non-blocking.
+    alive: Arc<AtomicBool>,
     model_name: String,
     timeout_duration: Duration,
 }
@@ -112,8 +123,13 @@ impl LlmSidecar {
         let pending: PendingMap = Arc::new(Mutex::new(HashMap::new()));
         let pending_clone = Arc::clone(&pending);
 
+        // The reader owns the only view of the child's death that arrives
+        // without us asking, so it carries the flag.
+        let alive = Arc::new(AtomicBool::new(true));
+        let alive_clone = Arc::clone(&alive);
+
         tokio::spawn(async move {
-            reader_task(stdout, pending_clone).await;
+            reader_task(stdout, pending_clone, alive_clone).await;
         });
 
         Ok(LlmSidecar {
@@ -121,6 +137,7 @@ impl LlmSidecar {
             child: Mutex::new(Some(child)),
             next_id: AtomicU64::new(1),
             pending,
+            alive,
             model_name: label.to_string(),
             timeout_duration: timeout,
         })
@@ -212,10 +229,14 @@ impl LlmSidecar {
         // Lock dropped here — concurrent callers can proceed
     }
 
-    /// Whether the sidecar still holds an open writer. Async because the writer
-    /// lives behind the same Mutex `stop(&self)` takes it from.
-    pub async fn is_running(&self) -> bool {
-        self.writer.lock().await.is_some()
+    /// Whether the sidecar is actually running.
+    ///
+    /// Truthful in both directions: `false` after `stop()`, and `false` once the
+    /// child dies on its own (the reader clears the flag on EOF or read error).
+    /// Synchronous and non-blocking — reading an atomic needs no lock and no
+    /// `.await`, so a UI thread can call this freely.
+    pub fn is_running(&self) -> bool {
+        self.alive.load(Ordering::SeqCst)
     }
 
     pub fn model_name(&self) -> &str {
@@ -234,6 +255,10 @@ impl LlmSidecar {
     /// the map drops every `oneshot::Sender`, so each waiting `infer()` observes
     /// a closed channel and resolves to `NotRunning` rather than hanging.
     pub async fn stop(&self) {
+        // Flag first: a concurrent is_running() must never report a sidecar we
+        // have already begun tearing down.
+        self.alive.store(false, Ordering::SeqCst);
+
         self.writer.lock().await.take(); // Drop writer → signal EOF
 
         if let Some(mut child) = self.child.lock().await.take() {
@@ -264,7 +289,7 @@ impl Drop for LlmSidecar {
 /// When stdout closes (child died), the task exits. All pending senders in the
 /// map are dropped, causing waiting receivers to get a RecvError which maps
 /// to NotRunning.
-async fn reader_task(stdout: ChildStdout, pending: PendingMap) {
+async fn reader_task(stdout: ChildStdout, pending: PendingMap, alive: Arc<AtomicBool>) {
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
 
@@ -299,7 +324,14 @@ async fn reader_task(stdout: ChildStdout, pending: PendingMap) {
         }
     }
 
-    // Reader exiting — clean up all pending requests
+    // Reader exiting means stdout closed or errored: the child is gone. This is
+    // the only place that observes a death we did not cause — a crash, an
+    // external kill, the process exiting on its own — so clearing the flag here
+    // is what makes is_running() truthful rather than merely post-stop correct.
+    // Idempotent with stop(), which also clears it.
+    alive.store(false, Ordering::SeqCst);
+
+    // Clean up all pending requests
     let mut map = pending.lock().await;
     map.clear(); // Drops all senders → receivers get RecvError → NotRunning
 }

@@ -157,7 +157,6 @@ fn point_in_hex_tests_match_vectors() {
 #[test]
 fn no_edge_bleed_single_hex() {
     use bnri_cosmic::hex_renderer::{render_hexrects, HexRect};
-    use image::GenericImageView;
 
     let rect = HexRect {
         col: 5,
