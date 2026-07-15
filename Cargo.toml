@@ -24,7 +24,12 @@ required-features = ["gui"]
 # Optional and binary-only, behind the `gui` feature: the lib and every test
 # build without it. `default` still enables it, so the default build is
 # unchanged — this only makes a GUI-less test run expressible.
-libcosmic = { git = "https://github.com/pop-os/libcosmic", features = [
+# Pinned to a commit, not a branch (R5 §4-B). This is not a new choice: it is
+# the revision Cargo.lock already resolved and committed — the `rev` only makes
+# the manifest say what the lock says, so `cargo update` cannot move it
+# silently. The floating branch is how the accesskit cosmic-0.14 breakage
+# arrived, which is the concrete reason §4-B asks for a SHA.
+libcosmic = { git = "https://github.com/pop-os/libcosmic", rev = "511384f6206527cf87369da67a9164831afbabef", features = [
     "tokio",
 ], optional = true }
 
