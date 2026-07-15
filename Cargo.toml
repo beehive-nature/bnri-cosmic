@@ -1,0 +1,65 @@
+[package]
+name = "bnri-cosmic"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+description = "BNRi inscription explorer + bLOVErAi interface — COSMIC desktop app"
+authors = ["Beehive Nature Reserve"]
+
+# [lib] + thin [[bin]] (G-0). The library carries everything testable; the
+# binary owns only the COSMIC view layer, so `cargo test` never needs a GUI.
+[lib]
+name = "bnri_cosmic"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bnri-cosmic"
+path = "src/main.rs"
+# The binary is the only thing that needs the GUI toolkit. Gating it here lets
+# the library and its tests build on a host that cannot compile libcosmic.
+required-features = ["gui"]
+
+[dependencies]
+# COSMIC GUI framework (Rust, by System76/mmstick/Michael Murphy).
+# Optional and binary-only, behind the `gui` feature: the lib and every test
+# build without it. `default` still enables it, so the default build is
+# unchanged — this only makes a GUI-less test run expressible.
+libcosmic = { git = "https://github.com/pop-os/libcosmic", features = [
+    "tokio",
+], optional = true }
+
+# No kernel dependency. The b-balance seam is a Unix socket (wire protocol,
+# not linkage) — zero kernel types are referenced. The former
+# `beehive-nature = { path = ... }` was a phantom: the kernel root is a virtual
+# manifest with no package of that name, so it could never have resolved.
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Image rendering (hex pixel art → canvas)
+image = "0.25"
+
+# EVM interaction (exSat RPC)
+ethers = { version = "2", features = ["rustls"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[features]
+# Unchanged default: the GUI binary still builds by default, so `cargo build`
+# means what it meant before.
+default = ["gui", "wgpu"]
+# The COSMIC view layer (src/main.rs). Off → lib + tests only, no GUI toolkit.
+gui = ["dep:libcosmic"]
+wgpu = ["libcosmic?/wgpu"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

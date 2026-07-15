@@ -1,0 +1,420 @@
+{
+  "description": "Shared hex-grid test vectors for Solidity HexLib + JS HexLib + Rust hex_renderer. Machine-generated at full f64 precision. Boundary is inclusive (<=). Top/bottom vertex boundary tests use exact dy=r (float-exact). Side edge boundary tests use +/- epsilon (1e-6) probes because float subtraction (cx + apothem) - cx can be 1 ULP larger than apothem, causing inclusive <= to fail for side vertices. This is documented IEEE 754 behavior, not a math error.",
+  "grid_type": "pointy-top",
+  "offset": "odd-row",
+  "boundary_inclusive": true,
+  "epsilon": 1e-06,
+  "float_note": "Side vertices (V1,V2,V4,V5) are NOT tested as 'boundary' because (cx + r*sqrt3/2) - cx != r*sqrt3/2 in IEEE 754. Top/bottom vertices (V0,V3) ARE tested as 'boundary' because dy = r is exact. Side edges use +/- epsilon probes.",
+  "cases": [
+    {
+      "id": "corner_00_even",
+      "col": 0,
+      "row": 0,
+      "scale": 30,
+      "center": [
+        30.0,
+        30.0
+      ],
+      "vertices": [
+        [
+          30.0,
+          0.0
+        ],
+        [
+          55.98076211353316,
+          15.0
+        ],
+        [
+          55.98076211353316,
+          45.0
+        ],
+        [
+          30.0,
+          60.0
+        ],
+        [
+          4.019237886466843,
+          45.0
+        ],
+        [
+          4.019237886466843,
+          15.0
+        ]
+      ],
+      "point_tests": [
+        {
+          "point": [
+            30.0,
+            30.0
+          ],
+          "expected": "inside"
+        },
+        {
+          "point": [
+            30.0,
+            0.0
+          ],
+          "expected": "boundary"
+        },
+        {
+          "point": [
+            30.0,
+            -1e-06
+          ],
+          "expected": "outside"
+        },
+        {
+          "point": [
+            30.0,
+            1e-06
+          ],
+          "expected": "inside"
+        },
+        {
+          "point": [
+            30.0,
+            60.0
+          ],
+          "expected": "boundary"
+        },
+        {
+          "point": [
+            30.0,
+            60.000001
+          ],
+          "expected": "outside"
+        },
+        {
+          "point": [
+            30.0,
+            59.999999
+          ],
+          "expected": "inside"
+        },
+        {
+          "point": [
+            55.98076111353316,
+            30.0
+          ],
+          "expected": "inside"
+        },
+        {
+          "point": [
+            55.98076311353316,
+            30.0
+          ],
+          "expected": "outside"
+        },
+        {
+          "point": [
+            4.019238886466844,
+            30.0
+          ],
+          "expected": "inside"
+        },
+        {
+          "point": [
+            4.019236886466843,
+            30.0
+          ],
+          "expected": "outside"
+        }
+      ]
+    },
+    {
+      "id": "corner_01_odd",
+      "col": 0,
+      "row": 1,
+      "scale": 30,
+      "center": [
+        55.98076211353316,
+        75.0
+      ],
+      "vertices": [
+        [
+          55.98076211353316,
+          45.0
+        ],
+        [
+          81.96152422706632,
+          60.0
+        ],
+        [
+          81.96152422706632,
+          90.0
+        ],
+        [
+          55.98076211353316,
+          105.0
+        ],
+        [
+          30.000000000000004,
+          90.0
+        ],
+        [
+          30.000000000000004,
+          60.0
+        ]
+      ],
+      "point_tests": [
+        {
+          "point": [
+            55.98076211353316,
+            75.0
+          ],
+          "expected": "inside"
+        },
+        {
+          "point": [
+            55.98076211353316,
+            45.0
+          ],
+          "expected": "boundary"
+        },
+        {
+          "point": [
+            55.98076211353316,
+            44.999999
+          ],
+          "expected": "outside"
+        }
+      ]
+    },
+    {
+      "id": "col1_row0_even",
+      "col": 1,
+      "row": 0,
+      "scale": 30,
+      "center": [
+        81.96152422706632,
+        30.0
+      ],
+      "vertices": [
+        [
+          81.96152422706632,
+          0.0
+        ],
+        [
+          107.94228634059948,
+          15.0
+        ],
+        [
+          107.94228634059948,
+          45.0
+        ],
+        [
+          81.96152422706632,
+          60.0
+        ],
+        [
+          55.98076211353316,
+          45.0
+        ],
+        [
+          55.98076211353316,
+          15.0
+        ]
+      ],
+      "point_tests": [
+        {
+          "point": [
+            81.96152422706632,
+            30.0
+          ],
+          "expected": "inside"
+        },
+        {
+          "point": [
+            55.98076311353316,
+            30.0
+          ],
+          "expected": "inside"
+        },
+        {
+          "point": [
+            55.98076111353316,
+            30.0
+          ],
+          "expected": "outside"
+        }
+      ]
+    },
+    {
+      "id": "corner_95_95_odd",
+      "col": 95,
+      "row": 95,
+      "scale": 30,
+      "center": [
+        4992.325563684833,
+        4305.0
+      ],
+      "vertices": [
+        [
+          4992.325563684833,
+          4275.0
+        ],
+        [
+          5018.306325798366,
+          4290.0
+        ],
+        [
+          5018.306325798366,
+          4320.0
+        ],
+        [
+          4992.325563684833,
+          4335.0
+        ],
+        [
+          4966.344801571299,
+          4320.0
+        ],
+        [
+          4966.344801571299,
+          4290.0
+        ]
+      ],
+      "point_tests": [
+        {
+          "point": [
+            4992.325563684833,
+            4305.0
+          ],
+          "expected": "inside"
+        },
+        {
+          "point": [
+            4992.325563684833,
+            4335.0
+          ],
+          "expected": "boundary"
+        },
+        {
+          "point": [
+            4992.325563684833,
+            4335.000001
+          ],
+          "expected": "outside"
+        },
+        {
+          "point": [
+            4992.325563684833,
+            4334.999999
+          ],
+          "expected": "inside"
+        }
+      ]
+    },
+    {
+      "id": "same_col_even_row4",
+      "col": 5,
+      "row": 4,
+      "scale": 30,
+      "center": [
+        289.80762113533154,
+        210.0
+      ],
+      "vertices": [
+        [
+          289.80762113533154,
+          180.0
+        ],
+        [
+          315.7883832488647,
+          195.0
+        ],
+        [
+          315.7883832488647,
+          225.0
+        ],
+        [
+          289.80762113533154,
+          240.0
+        ],
+        [
+          263.8268590217984,
+          225.0
+        ],
+        [
+          263.8268590217984,
+          195.0
+        ]
+      ],
+      "point_tests": [
+        {
+          "point": [
+            289.80762113533154,
+            210.0
+          ],
+          "expected": "inside"
+        }
+      ]
+    },
+    {
+      "id": "same_col_odd_row5",
+      "col": 5,
+      "row": 5,
+      "scale": 30,
+      "center": [
+        315.7883832488647,
+        255.0
+      ],
+      "vertices": [
+        [
+          315.7883832488647,
+          225.0
+        ],
+        [
+          341.76914536239786,
+          240.0
+        ],
+        [
+          341.76914536239786,
+          270.0
+        ],
+        [
+          315.7883832488647,
+          285.0
+        ],
+        [
+          289.80762113533154,
+          270.0
+        ],
+        [
+          289.80762113533154,
+          240.0
+        ]
+      ],
+      "point_tests": [
+        {
+          "point": [
+            315.7883832488647,
+            255.0
+          ],
+          "expected": "inside"
+        },
+        {
+          "point": [
+            315.7883832488647,
+            225.0
+          ],
+          "expected": "boundary"
+        },
+        {
+          "point": [
+            315.7883832488647,
+            224.999999
+          ],
+          "expected": "outside"
+        },
+        {
+          "point": [
+            315.7883832488647,
+            225.000001
+          ],
+          "expected": "inside"
+        }
+      ]
+    }
+  ]
+}
