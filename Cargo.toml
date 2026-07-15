@@ -48,20 +48,49 @@ serde_json = "1"
 # Image rendering (hex pixel art → canvas)
 image = "0.25"
 
-# EVM interaction (exSat RPC)
-ethers = { version = "2", features = ["rustls"] }
+# EVM interaction (exSat RPC). Optional, behind the `evm` feature, default-off.
+#
+# Not a style call. `ethers 2.0.14` pins `jsonwebtoken 8.3.0` -> `ring 0.16.20`
+# and `reqwest 0.11.27` -> `rustls 0.21.12` -> `rustls-webpki 0.101.7`, which
+# carry RUSTSEC-2025-0009, -2026-0098, -2026-0099 and -2026-0104. Those are
+# major-version pins: `cargo update` cannot move them, so the advisories cannot
+# be cleared while this crate is in the default tree.
+#
+# The gating stands on "vulnerable + unused", NOT on "ethers is sunset" — that
+# premise is UNVERIFIED and is not load-bearing here. Today the entire tree is
+# pulled in by `wallet.rs`, which is 8 TODOs and four never-read fields (the
+# C-3 dispatch, R5 §0.7). Vulnerable code imported by a stub that is not wired.
+# ethers-vs-alloy stays open and belongs to C-3, where real signing will supply
+# the evidence to settle it.
+ethers = { version = "2", features = ["rustls"], optional = true }
 
 # Logging
 tracing = "0.1"
 tracing-subscriber = "0.3"
 
 [features]
-# Unchanged default: the GUI binary still builds by default, so `cargo build`
-# means what it meant before.
-default = ["gui", "wgpu"]
-# The COSMIC view layer (src/main.rs). Off → lib + tests only, no GUI toolkit.
-gui = ["dep:libcosmic"]
+# STANDING ORDER (R6): `cargo audit` runs against the default feature set, and
+# no vulnerable dependency may sit in default. A feature that pulls a known-vuln
+# crate ships default-off until the code that needs it is real and the advisory
+# is cleared. This is the dependency analogue of "an unfinished stub should look
+# unfinished to the toolchain" — an unused vulnerability should not be in the
+# shipped surface at all.
+#
+# So `default` is empty: the library and its tests, nothing else. This IS a
+# change — `cargo build` no longer builds the GUI binary without `--features gui`
+# — and it is the point, not a side effect. Both non-default features carry
+# advisories today:
+#   gui -> libcosmic -> quick-xml 0.39.4  (RUSTSEC-2026-0194/-0195, 7.5 high)
+#   evm -> ethers 2.0.14 -> ring, rustls-webpki (4 advisories; see [dependencies])
+# Deferred, not dismissed: both are recorded in the audit doc and owned — `gui`
+# by whoever first builds the GUI on Linux, `evm` by C-3.
+default = []
+# The COSMIC view layer (src/main.rs). Off -> lib + tests only, no GUI toolkit.
+gui = ["dep:libcosmic", "wgpu"]
 wgpu = ["libcosmic?/wgpu"]
+# The exSat EVM client. Off -> `wallet` is not compiled. C-3 turns this on when
+# it wires real signing, and answers ethers-vs-alloy at the same time.
+evm = ["dep:ethers"]
 
 [profile.release]
 opt-level = 3

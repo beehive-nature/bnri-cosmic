@@ -11,7 +11,11 @@ use cosmic::theme::Theme;
 use cosmic::Application;
 
 use bnri_cosmic::TransactionQuote;
-use bnri_cosmic::{agent, hex_renderer, wallet};
+// `wallet` dropped: it is gated behind `evm` (default-off) and was never used
+// here — `wallet::` appears nowhere in this file. `agent` and `hex_renderer`
+// are likewise unused as `agent::` / `hex_renderer::` and will warn on a host
+// that can build the GUI; left alone, since main.rs view logic is out of scope.
+use bnri_cosmic::{agent, hex_renderer};
 
 // ──────────────────────────────────────────────────────────
 // App state

@@ -12,6 +12,13 @@ pub mod agent;
 pub mod hex_renderer;
 pub mod quote;
 pub mod views;
+
+/// The exSat EVM wallet. Gated behind `evm` (default-off) because it is the
+/// only thing that pulls `ethers`, whose transitive pins carry four RUSTSEC
+/// advisories that no `cargo update` can move. It is a stub today — 8 TODOs,
+/// four never-read fields — so nothing is lost by not compiling it, and the
+/// default tree audits clean. C-3 enables `evm` when it wires real signing.
+#[cfg(feature = "evm")]
 pub mod wallet;
 
 pub use quote::TransactionQuote;
