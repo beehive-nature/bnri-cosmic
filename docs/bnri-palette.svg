@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 150" width="720" height="150">
+  <!-- BNRi palette — six edges, six intentions. The substrate is the ground, not a swatch. -->
+  <rect x="0" y="0" width="720" height="150" rx="8" fill="#0A0A0F"/>
+
+  <!-- Golden — the hive -->
+  <polygon points="60,24 79.05,35 79.05,57 60,68 40.95,57 40.95,35" fill="#FFD60A" stroke="#FFD60A" stroke-width="2"/>
+  <text x="60" y="96" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#FFD60A">Golden</text>
+  <text x="60" y="114" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#8A8A9A">#FFD60A</text>
+  <text x="60" y="133" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#6A6A7A">the hive</text>
+
+  <!-- Substrate — the void. Drawn with a rim so it reads against its own ground. -->
+  <polygon points="180,24 199.05,35 199.05,57 180,68 160.95,57 160.95,35" fill="#0A0A0F" stroke="#3A3A4F" stroke-width="2"/>
+  <text x="180" y="96" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#8A8A9A">Substrate</text>
+  <text x="180" y="114" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#8A8A9A">#0A0A0F</text>
+  <text x="180" y="133" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#6A6A7A">the void</text>
+
+  <!-- Companion — the bond -->
+  <polygon points="300,24 319.05,35 319.05,57 300,68 280.95,57 280.95,35" fill="#A24BFF" stroke="#A24BFF" stroke-width="2"/>
+  <text x="300" y="96" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#A24BFF">Companion</text>
+  <text x="300" y="114" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#8A8A9A">#A24BFF</text>
+  <text x="300" y="133" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#6A6A7A">the bond</text>
+
+  <!-- Kernel — the OS -->
+  <polygon points="420,24 439.05,35 439.05,57 420,68 400.95,57 400.95,35" fill="#9FFF3D" stroke="#9FFF3D" stroke-width="2"/>
+  <text x="420" y="96" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#9FFF3D">Kernel</text>
+  <text x="420" y="114" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#8A8A9A">#9FFF3D</text>
+  <text x="420" y="133" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#6A6A7A">the OS</text>
+
+  <!-- Chain — the settlement -->
+  <polygon points="540,24 559.05,35 559.05,57 540,68 520.95,57 520.95,35" fill="#00BFB2" stroke="#00BFB2" stroke-width="2"/>
+  <text x="540" y="96" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#00BFB2">Chain</text>
+  <text x="540" y="114" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#8A8A9A">#00BFB2</text>
+  <text x="540" y="133" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#6A6A7A">the settlement</text>
+
+  <!-- Rave — the art -->
+  <polygon points="660,24 679.05,35 679.05,57 660,68 640.95,57 640.95,35" fill="#FF3DB0" stroke="#FF3DB0" stroke-width="2"/>
+  <text x="660" y="96" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#FF3DB0">Rave</text>
+  <text x="660" y="114" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#8A8A9A">#FF3DB0</text>
+  <text x="660" y="133" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#6A6A7A">the art</text>
+</svg>

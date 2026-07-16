@@ -25,6 +25,10 @@ The public inscription explorer (Blockscout fork, chain-agnostic) is separate �
 
 BNRi's six theme colors are not decoration. Each one names a force in the system, and the hex-pixel art renders them at full saturation on a near-black substrate.
 
+<div align="center">
+<img src="docs/bnri-palette.svg" width="720" alt="BNRi palette — Golden #FFD60A the hive, Substrate #0A0A0F the void, Companion #A24BFF the bond, Kernel #9FFF3D the OS, Chain #00BFB2 the settlement, Rave #FF3DB0 the art — six hexes on the substrate">
+</div>
+
 | Hex | Name | Intention |
 |---|---|---|
 | `#FFD60A` | **Golden** | **The hive.** The collective, the earned energy. b-token, metabolic, SPIRIT-1 — never granted, never gas. The color of work that compounds. |
